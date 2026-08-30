@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ت <!DOCTYPE html>
 <html>
   <head>
     <title>CPR AR Trainer - Prototype A | Content-Matched Control</title>
@@ -73,7 +73,7 @@
       }
 
       #progress-bar {
-        width: 16.6%; height: 100%; background: var(--accent);
+        width: 7.69%; height: 100%; background: var(--accent);
         border-radius: 10px; transition: 0.8s ease;
       }
 
@@ -96,7 +96,8 @@
       }
 
       #start-cpr-btn {
-        background: var(--success-green); color: #000; display: none;
+        background: var(--success-green); color: #000;
+        position: relative; z-index: 20;
       }
 
       .btn-reset {
@@ -147,13 +148,13 @@
       <div class="instruction-panel">
         <div id="cpr-counter">0</div>
         <div class="info-box">
-          <small id="step-num" style="color: var(--accent); font-weight: bold;">STEP 1 OF 6</small>
+          <small id="step-num" style="color: var(--accent); font-weight: bold;">STEP 1 OF 13</small>
           <div id="text-info">Checking scene safety...</div>
         </div>
         <div class="controls">
           <button class="btn-reset" onclick="location.reload()">RESET</button>
-          <button id="start-cpr-btn" class="btn-next" onclick="startCPR()">START COMPRESSIONS</button>
-          <button id="next-btn-text" class="btn-next" onclick="nextStep()">CONTINUE →</button>
+          <button id="start-cpr-btn" class="btn-next" type="button" onclick="startCPR()" hidden>START COMPRESSIONS</button>
+          <button id="next-btn-text" class="btn-next" type="button" onclick="nextStep()">CONTINUE →</button>
         </div>
       </div>
     </div>
@@ -214,9 +215,9 @@
         </a-entity>
 
         <a-entity id="group9" visible="false">
-          <a-image src="#cpr-hands" position="-2.0 1.5 0" width="1.8" height="1.8"
+          <a-image id="hand-image" src="#cpr-hands" position="-2.0 1.5 0" width="1.8" height="1.8"
                    rotation="-90 0 0"
-                   animation="property: position; from: -2.0 1.5 0; to: -2.0 1.1 0; dur: 545; dir: alternate; loop: true"></a-image>
+                   animation="property: position; from: -2.0 1.5 0; to: -2.0 1.1 0; dur: 272.5; dir: alternate; loop: true; easing: easeInOutQuad; enabled: false"></a-image>
           <a-ring color="#ff4b2b" radius-inner="0.35" radius-outer="0.45"
                   position="-2.0 1.05 0" rotation="-90 0 0"></a-ring>
           <a-text value="PUSH HERE" align="center" position="-2.0 3.0 0" scale="2.5 2.5 2.5" color="#ff4b2b"></a-text>
@@ -290,16 +291,35 @@
         }, 800);
       }
 
+      function updateCompressionControls() {
+        const nextBtn = document.getElementById('next-btn-text');
+        const startBtn = document.getElementById('start-cpr-btn');
+
+        if (currentStep === 9) {
+          nextBtn.hidden = true;
+          startBtn.hidden = false;
+          startBtn.disabled = false;
+        } else {
+          startBtn.hidden = true;
+          nextBtn.hidden = false;
+          nextBtn.disabled = false;
+        }
+      }
+
       function nextStep() {
         clearInterval(timer);
+        timer = null;
+
         document.getElementById('cpr-counter').style.display = 'none';
-        document.getElementById('next-btn-text').style.display = 'block';
-        document.getElementById('start-cpr-btn').style.display = 'none';
 
         if (currentStep < 13) {
-          document.getElementById('group' + currentStep).setAttribute('visible', 'false');
+          const oldGroup = document.getElementById('group' + currentStep);
+          if (oldGroup) oldGroup.setAttribute('visible', 'false');
+
           currentStep++;
-          document.getElementById('group' + currentStep).setAttribute('visible', 'true');
+
+          const newGroup = document.getElementById('group' + currentStep);
+          if (newGroup) newGroup.setAttribute('visible', 'true');
 
           document.getElementById('step-num').innerText = `STEP ${currentStep} OF 13`;
           document.getElementById('text-info').innerText = stepsText[currentStep - 1];
@@ -308,9 +328,16 @@
           document.getElementById('next-btn-text').innerText =
             currentStep === 13 ? "FINISH ✓" : "CONTINUE →";
 
+          updateCompressionControls();
+
+          // Mobile Safari/iOS repaint safeguard.
           if (currentStep === 9) {
-            document.getElementById('next-btn-text').style.display = 'none';
-            document.getElementById('start-cpr-btn').style.display = 'block';
+            requestAnimationFrame(() => {
+              const startBtn = document.getElementById('start-cpr-btn');
+              startBtn.hidden = false;
+              startBtn.style.visibility = 'visible';
+              startBtn.style.opacity = '1';
+            });
           }
         } else {
           showFinishPage();
@@ -318,24 +345,58 @@
       }
 
       function startCPR() {
+        clearInterval(timer);
+        timer = null;
         count = 0;
-        const handImg = document.getElementById('hand-image');
-        document.getElementById('cpr-counter').style.display = 'block';
-        document.getElementById('cpr-counter').innerText = count;
-        document.getElementById('start-cpr-btn').style.display = 'none';
-        
-        handImg.setAttribute('animation', 'enabled: true');
-        
+
+        const counter = document.getElementById('cpr-counter');
+        const startBtn = document.getElementById('start-cpr-btn');
+        const nextBtn = document.getElementById('next-btn-text');
+
+        // Primary selector plus fallback makes the function safe even if the ID is removed later.
+        const handImg =
+          document.getElementById('hand-image') ||
+          document.querySelector('#group9 a-image');
+
+        counter.style.display = 'block';
+        counter.innerText = '0';
+
+        startBtn.hidden = true;
+        nextBtn.hidden = true;
+
+        if (handImg) {
+          handImg.setAttribute('animation', 'enabled: true');
+        }
+
+        // Resume AudioContext on iPhone/iPad after the user's button tap.
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
         timer = setInterval(() => {
           count++;
-          if (count <= 30) {
-            document.getElementById('cpr-counter').innerText = count;
-            beep(950, 0.08); 
-          } else {
-            document.getElementById('cpr-counter').innerText = "DONE!";
-            handImg.setAttribute('animation', 'enabled: false');
+          counter.innerText = count;
+
+          try {
+            beep(950, 0.08);
+          } catch (e) {
+            console.warn('Beep could not be played:', e);
+          }
+
+          if (count >= 30) {
             clearInterval(timer);
-            document.getElementById('next-btn-text').style.display = 'block';
+            timer = null;
+
+            if (handImg) {
+              handImg.setAttribute('animation', 'enabled: false');
+            }
+
+            setTimeout(() => {
+              counter.innerText = "DONE!";
+              nextBtn.hidden = false;
+              nextBtn.disabled = false;
+              nextBtn.innerText = "CONTINUE →";
+            }, 250);
           }
         }, 545);
       }
