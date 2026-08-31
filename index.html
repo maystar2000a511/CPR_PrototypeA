@@ -135,7 +135,7 @@
 
     <div id="landing-page" class="overlay-page">
       <div class="glass-card">
-        <img src="HSA.png" class="uni-logo">
+        <img src="./HSA.jpeg" class="uni-logo">
         <h1>CPR AR MISSION</h1>
         <p>Interactive Training Simulation</p>
         
@@ -177,7 +177,7 @@
 
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
       <a-assets>
-        <img id="cpr-hands" src="hands.png">
+        <img id="cpr-hands" src="./hands.jpeg" crossorigin="anonymous">
       </a-assets>
 
       <a-marker preset="hiro">
@@ -262,12 +262,12 @@
       let currentStep = 1;
       let count = 0;
       let timer = null;
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      let audioCtx = null;
 
       const stepsText = [
         "Make sure the area is safe before approaching the person.",
         "Call out loudly and ask the person whether they are okay.",
-        "Check responsiveness by gently tapping the person"s shoulder.",
+        "Check responsiveness by gently tapping the person's shoulder.",
         "Place one hand on the forehead to prepare to open the airway.",
         "Lift the chin gently to open the airway.",
         "Look for chest movement.",
@@ -281,6 +281,7 @@
       ];
 
       function beep(freq, duration) {
+        if (!audioCtx) return;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.connect(gain); gain.connect(audioCtx.destination);
@@ -290,13 +291,28 @@
       }
 
       function initExperience() {
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        document.getElementById('landing-page').style.opacity = '0';
-        setTimeout(() => {
+        try {
+          if (!audioCtx) {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextClass) audioCtx = new AudioContextClass();
+          }
+
+          if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume().catch(() => {});
+          }
+
+          document.getElementById('landing-page').style.opacity = '0';
+          setTimeout(() => {
+            document.getElementById('landing-page').style.display = 'none';
+            document.getElementById('ar-ui').style.display = 'block';
+            document.getElementById('sos-btn').style.display = 'block';
+          }, 500);
+        } catch (error) {
+          console.error('Could not start session:', error);
           document.getElementById('landing-page').style.display = 'none';
           document.getElementById('ar-ui').style.display = 'block';
           document.getElementById('sos-btn').style.display = 'block';
-        }, 800);
+        }
       }
 
       function updateCompressionControls() {
@@ -378,6 +394,10 @@
           nextBtn.innerText = 'CONTINUE →';
         }
       }
+
+      window.addEventListener('error', function(event) {
+        console.error('Page error:', event.message);
+      });
 
       function showFinishPage() {
         document.getElementById('ar-ui').style.display = 'none';
