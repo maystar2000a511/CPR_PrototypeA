@@ -1,403 +1,345 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>CPR AR Trainer - Prototype A | Basic Control Interface</title>
+   <title>CPR AR Trainer - Prototype A | Basic Interface</title>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     
-    <style>
+   <style>
       :root {
-        --primary-gradient: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
-        --accent: #00f2fe;
-        --emergency-red: #ff4b2b;
-        --success-green: #00ff88;
-        --glass: rgba(255, 255, 255, 0.1);
+       --primary-gradient: #2b2b2b; 
+       --accent: #bfbfbf;
+       --emergency-red: #ff4b2b;
+       --success-green: #d0d0d0;
+       --glass: #e6e6e6; 
       }
-
-      body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #000; overflow: hidden; }
-
-      .emergency-btn {
-        position: fixed; top: 20px; right: 20px; z-index: 5000;
-        background: var(--emergency-red); color: white; border: none;
+ 
+      body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #000; overflow: hidden; touch-action: none; }
+      
+      button { touch-action: manipulation; }
+ 
+     .emergency-btn {
+       position: fixed; top: 85px; right: 20px; z-index: 5000;
+       background: var(--emergency-red); color: white; border: none;
         padding: 12px 20px; border-radius: 12px; font-weight: bold;
-        box-shadow: 0 0 15px rgba(255, 75, 43, 0.6); cursor: pointer;
-        display: none; animation: pulse 1.5s infinite; pointer-events: auto;
+       box-shadow: 0 0 15px rgba(255, 75, 43, 0.6); cursor: pointer;
+        display: none; pointer-events: auto;
       }
-
+ 
       @keyframes pulse {
         0% { transform: scale(1); }
         50% { transform: scale(1.05); }
         100% { transform: scale(1); }
       }
-
-      .overlay-page {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: var(--primary-gradient); z-index: 3000;
+.overlay-page {
+       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+       background: var(--primary-gradient); z-index: 3000;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        color: white; text-align: center; transition: 0.8s ease-in-out;
+        text-align: center; transition: 0.8s ease-in-out;
+        pointer-events: auto;
+      }
+ 
+     .glass-card {
+       background: var(--glass);
+       border-radius: 4px; padding: 35px 30px; width: 85%; max-width: 450px;
+        border: 1px solid #999;
+       position: relative;
+       color: #2c3e50; 
+      }
+      
+      .glass-card h1 {
+        color: #222;
+        margin-bottom: 5px;
+        font-size: 1.8rem;
       }
 
-      .glass-card {
-        background: var(--glass); backdrop-filter: blur(20px);
-        border-radius: 35px; padding: 30px; width: 85%; max-width: 450px;
-        border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 25px 50px rgba(0,0,0,0.6);
-        position: relative;
+      .glass-card p.subtitle {
+        color: #555;
+        margin-top: 0;
+        font-weight: 500;
+        margin-bottom: 20px;
       }
-
+ 
       .uni-logo {
-        position: absolute; top: 20px; left: 20px; width: 50px; height: auto;
+       position: absolute; top: 20px; left: 20px; width: 50px; height: auto;
       }
-
-      .how-to-use {
-        text-align: left; background: rgba(0,0,0,0.3); padding: 15px;
-        border-radius: 15px; margin: 20px 0; font-size: 0.9rem; line-height: 1.4;
+ 
+     .how-to-use {
+       text-align: left; background: #d5d5d5; padding: 20px;
+       border-radius: 2px; margin: 20px 0; font-size: 1rem; line-height: 1.6;
+       color: #222; border: 1px solid #aaa;
       }
-      .how-to-use b { color: var(--accent); }
-
+     .how-to-use p { margin: 8px 0; }
+     .how-to-use b { color: #222; }
+ 
       .btn-main {
-        background: #fff; color: #1e3c72; padding: 18px 50px; border: none;
-        border-radius: 50px; font-weight: bold; font-size: 1.2rem; cursor: pointer;
-        transition: 0.3s;
+       background: #555;
+       color: #fff; padding: 18px 50px; border: none;
+       border-radius: 4px; font-weight: bold; font-size: 1.2rem; cursor: pointer;
       }
-
-      #ar-ui {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+#ar-ui {
+       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         z-index: 1000; display: none; pointer-events: none;
       }
-
-      .progress-container {
-        position: absolute; top: 30px; left: 50%; transform: translateX(-50%);
-        width: 85%; height: 8px; background: rgba(255,255,255,0.2); border-radius: 10px;
+ 
+     .progress-container {
+       position: absolute; top: 30px; left: 50%; transform: translateX(-50%);
+        width: 85%; height: 8px; background: rgba(255,255,255,0.35); border-radius: 0;
       }
-
-      #progress-bar {
+ 
+     #progress-bar {
         width: 7.69%; height: 100%; background: var(--accent);
-        border-radius: 10px; transition: 0.8s ease;
+       border-radius: 0; transition: 0.8s ease;
       }
-
-      .instruction-panel {
-        position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+ 
+     .instruction-panel {
+       position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
         width: 90%; pointer-events: auto;
       }
-
+ 
       .info-box {
-        background: rgba(0, 0, 0, 0.85); color: white; padding: 25px;
-        border-radius: 25px; border-left: 6px solid var(--accent); margin-bottom: 20px;
+       background: rgba(20, 20, 20, 0.92); color: white; padding: 20px;
+       border-radius: 2px; border: 1px solid #888; margin-bottom: 20px;
       }
-
+ 
       .controls { display: flex; gap: 12px; }
       
       .btn-next {
-        flex: 3; padding: 20px; border-radius: 50px; border: none;
+        flex: 3; padding: 20px; border-radius: 4px; border: none;
         color: white; font-weight: bold; background: var(--emergency-red);
-        font-size: 1.2rem; cursor: pointer;
+       font-size: 1.2rem; cursor: pointer; 
+      }
+ 
+     #start-cpr-btn {
+       background: var(--success-green); color: #000; display: none;
+       flex: 3; padding: 20px; border-radius: 4px; border: none;
+       font-weight: bold; font-size: 1.2rem; cursor: pointer; 
       }
 
-      #start-cpr-btn {
-        background: var(--success-green); color: #000;
-        position: relative; z-index: 20;
+      .btn-next:disabled, #start-cpr-btn:disabled {
+        background: #7f8c8d !important;
+        color: #bdc3c7 !important;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
       }
-
+ 
       .btn-reset {
         flex: 1; background: #333; color: #fff; border-radius: 50px; border: 1px solid #555;
-        font-weight: bold; cursor: pointer;
+       font-weight: bold; cursor: pointer;
+      }
+ 
+     #cpr-counter {
+       font-size: 6rem; color: #ffeb3b; font-weight: 900; display: none;
+       text-shadow: 0 0 30px rgba(255,235,59,0.8); text-align: center; margin-bottom: 15px;
       }
 
-      #cpr-counter {
-        font-size: 6rem; color: #ffeb3b; font-weight: 900; display: none;
-        text-shadow: 0 0 30px rgba(255,235,59,0.8); text-align: center; margin-bottom: 15px;
+      #instruction-text {
+        font-size: 1rem;
+        font-weight: normal;
+        line-height: 1.45;
+        margin-top: 8px;
+        color: white;
+        letter-spacing: 0;
       }
-
-
-      #compression-tap-btn {
-        display: none;
-        flex: 3;
-        padding: 20px;
-        border-radius: 50px;
-        border: none;
-        background: #555;
-        color: #fff;
-        font-weight: bold;
-        font-size: 1.1rem;
-        cursor: pointer;
-        touch-action: manipulation;
-      }
-
-      #finish-page { display: none; opacity: 0; }
-    </style>
+ 
+     #finish-page { display: none; opacity: 0; }
+   </style>
   </head>
-
+ 
   <body>
-
+ 
     <button id="sos-btn" class="emergency-btn" onclick="window.location.href='tel:112'">CALL 112 📞</button>
-
+ 
     <div id="landing-page" class="overlay-page">
       <div class="glass-card">
-        <img src="./HSA.png" class="uni-logo">
-        <h1>CPR AR MISSION</h1>
-        <p>Interactive Training Simulation</p>
-        
+        <img src="HSA.png" class="uni-logo" alt="Logo">
+       <h1>CPR AR MISSION</h1>
+       <p class="subtitle">Interactive Training</p>
+       
         <div class="how-to-use">
-          <p><b>1. Camera:</b> Allow camera access when prompted.</p>
-          <p><b>2. Marker:</b> Aim camera at the <b>HIRO</b> marker.</p>
-          <p><b>3. Steps:</b> Follow the 3D visual aids for each step.</p>
-          <p><b>4. Compressions:</b> Follow the written instruction and complete 30 simulated compressions.</p>
-        </div>
-
-        <button class="btn-main" onclick="initExperience()">START SESSION</button>
+         <p><b>Camera:</b> Allow camera access.</p>
+         <p><b>Marker:</b> Point the camera at the HIRO marker.</p>
+         <p><b>Training:</b> Read the instruction shown for each step and continue through the sequence.</p>
+       </div>
+ 
+       <button class="btn-main" onclick="initExperience()">START SESSION</button>
       </div>
     </div>
-
+ 
     <div id="finish-page" class="overlay-page">
       <div class="glass-card">
-        <h1 style="color: var(--success-green);">MISSION COMPLETE</h1>
-        <p>You have mastered the CPR cycle effectively.</p>
-        <button class="btn-main" onclick="location.reload()">RESTART</button>
+        <h1 style="color: #27ae60;">MISSION COMPLETE</h1>
+       <p style="margin-bottom: 30px;">You have mastered the CPR cycle effectively.</p>
+       <button class="btn-main" onclick="location.reload()">RESTART</button>
       </div>
     </div>
-
+ 
     <div id="ar-ui">
       <div class="progress-container"><div id="progress-bar"></div></div>
       <div class="instruction-panel">
         <div id="cpr-counter">0</div>
         <div class="info-box">
-          <small id="step-num" style="color: var(--accent); font-weight: bold;">STEP 1 OF 13</small>
-          <div id="text-info">Checking scene safety...</div>
-        </div>
+         <small id="step-num" style="color: var(--accent); font-weight: bold;">STEP 1 OF 13</small>
+         <div id="instruction-text">Make sure the area is safe before approaching the person.</div> 
+       </div>
         <div class="controls">
-          <button class="btn-reset" onclick="location.reload()">RESET</button>
-          <button id="start-cpr-btn" class="btn-next" type="button" onclick="startCPR()" hidden>START COMPRESSIONS</button>
-          <button id="compression-tap-btn" type="button" onclick="registerCompression()">TAP COMPRESSION</button>
-          <button id="next-btn-text" class="btn-next" type="button" onclick="nextStep()">CONTINUE →</button>
-        </div>
+         <button class="btn-reset" onclick="location.reload()">RESET</button>
+         <button id="start-cpr-btn" onclick="startCPR()">START COMPRESSIONS</button>
+         <button id="next-btn-text" class="btn-next" onclick="nextStep()">CONTINUE →</button>
+       </div>
       </div>
     </div>
-
+ 
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
-      <a-assets>
-        <img id="cpr-hands" src="./hands.png" crossorigin="anonymous">
-      </a-assets>
+     <a-assets>
+        <img id="cpr-hands" src="hands.png">
+     </a-assets>
+ 
+     <a-marker preset="hiro" smooth="true" smoothCount="10" smoothTolerance="0.02" smoothThreshold="5">
+       
+       <a-entity id="group1">
+         </a-entity>
+ 
+       <a-entity id="group2" visible="false">
+         </a-entity>
+ 
+       <a-entity id="group3" visible="false">
+         <a-cone color="#00f2fe" radius-bottom="0.2" height="0.6" position="-2.0 1.5 -0.5" rotation="180 0 0"></a-cone>
+       </a-entity>
+ 
+       <a-entity id="group4" visible="false">
+         <a-cone color="#00f2fe" radius-bottom="0.2" height="0.6" position="-2.0 1.5 -1" rotation="180 0 0"></a-cone>
+       </a-entity>
+ 
+       <a-entity id="group5" visible="false">
+         <a-cone color="#00f2fe" radius-bottom="0.2" height="0.6" position="-2.0 1.5 -0.8" rotation="180 0 0"></a-cone>
+       </a-entity>
+ 
+       <a-entity id="group6" visible="false">
+         <a-cone color="#00f2fe" radius-bottom="0.2" height="0.6" position="-2.0 1.4 -0.6" rotation="180 0 0"></a-cone>
+       </a-entity>
+ 
+       <a-entity id="group7" visible="false">
+         <a-cone color="#00f2fe" radius-bottom="0.2" height="0.6" position="-2.0 1.5 -0.5" rotation="180 0 0"></a-cone>
+       </a-entity>
 
-      <a-marker preset="hiro">
-        <a-entity id="group1">
-          <a-cone color="#00ff88" radius-bottom="0.2" height="0.6"
-                  position="-2.0 1.5 0" rotation="180 0 0"></a-cone>
-          <a-text value="SAFE?" align="center" position="-2.0 2.2 0" scale="1.3 1.3 1.3"></a-text>
-        </a-entity>
+       <a-entity id="group8" visible="false">
+         <a-cone color="#00f2fe" radius-bottom="0.2" height="0.6" position="-2.0 1.4 0" rotation="180 0 0"></a-cone>
+       </a-entity>
 
-        <a-entity id="group2" visible="false">
-          <a-sphere color="#ffeb3b" radius="0.25" position="-2.0 1.6 -0.4"></a-sphere>
-          <a-text value="CALL OUT" align="center" position="-2.0 2.2 -0.4" scale="1.2 1.2 1.2"></a-text>
-        </a-entity>
+       <a-entity id="group9" visible="false">
+         <a-cone color="#00f2fe" radius-bottom="0.2" height="0.6" position="-2.0 1.5 0" rotation="180 0 0"></a-cone>
+       </a-entity>
 
-        <a-entity id="group3" visible="false">
-          <a-sphere color="#ffeb3b" radius="0.25" position="-2.0 1.6 -0.4"></a-sphere>
-          <a-text value="CHECK RESPONSE" align="center" position="-2.0 2.2 -0.4" scale="1.1 1.1 1.1"></a-text>
-        </a-entity>
+       <a-entity id="group10" visible="false">
+         <a-image id="hand-image" src="#cpr-hands" position="-2.0 1.5 0" width="1.8" height="1.8" rotation="-90 0 0" animation="property: position; from: -2.0 1.5 0; to: -2.0 1.1 0; dur: 272.5; dir: alternate; loop: true; easing: easeInOutQuad; enabled: false"></a-image>
+         <a-ring id="cpr-ring" color="#ff4b2b" radius-inner="0.35" radius-outer="0.45" position="-2.0 1.05 0" rotation="-90 0 0" animation="property: material.opacity; from: 1; to: 0.2; dur: 272.5; dir: alternate; loop: true"></a-ring>
+       </a-entity>
 
-        <a-entity id="group4" visible="false">
-          <a-box color="#00f2fe" position="-2.0 1.4 -0.6" scale="0.35 0.35 0.35"></a-box>
-          <a-text value="FOREHEAD" align="center" position="-2.0 2.0 -0.6" scale="1.1 1.1 1.1"></a-text>
-        </a-entity>
+       <a-entity id="group11" visible="false">
+         <a-cone color="#00f2fe" radius-bottom="0.2" height="0.6" position="-2.0 1.5 -1" rotation="180 0 0"></a-cone>
+       </a-entity>
 
-        <a-entity id="group5" visible="false">
-          <a-torus color="#00f2fe" radius="0.2" radius-tubular="0.02"
-                   position="-2.0 1.5 -1" rotation="90 0 0"></a-torus>
-          <a-text value="LIFT CHIN" align="center" position="-2.0 2.0 -1" scale="1.1 1.1 1.1"></a-text>
-        </a-entity>
+       <a-entity id="group12" visible="false">
+         <a-cone color="#00f2fe" radius-bottom="0.2" height="0.6" position="-2.0 1.6 -1" rotation="180 0 0"></a-cone>
+       </a-entity>
 
-        <a-entity id="group6" visible="false">
-          <a-box color="#ff8800" position="-2.0 1.4 -0.6" scale="0.4 0.4 0.4"></a-box>
-          <a-text value="CHEST MOVEMENT" align="center" position="-2.0 2.0 -0.6" scale="1.0 1.0 1.0"></a-text>
-        </a-entity>
+       <a-entity id="group13" visible="false">
+         <a-cone color="#00f2fe" radius-bottom="0.2" height="0.6" position="-2.0 1.6 -1" rotation="180 0 0"></a-cone>
+       </a-entity>
+ 
+     </a-marker>
+     <a-entity camera></a-entity>
+   </a-scene>
+ 
+   <script>
+      document.addEventListener('dblclick', function(event) {
+        event.preventDefault();
+      }, { passive: false });
 
-        <a-entity id="group7" visible="false">
-          <a-box color="#ff8800" position="-2.0 1.4 -0.6" scale="0.4 0.4 0.4"></a-box>
-          <a-text value="BREATHING?" align="center" position="-2.0 2.0 -0.6" scale="1.1 1.1 1.1"></a-text>
-        </a-entity>
+      document.addEventListener('gesturestart', function(e) {
+        e.preventDefault();
+      });
 
-        <a-entity id="group8" visible="false">
-          <a-ring color="#00f2fe" radius-inner="0.32" radius-outer="0.45"
-                  position="-2.0 1.05 0" rotation="-90 0 0"></a-ring>
-          <a-text value="HAND ON CHEST" align="center" position="-2.0 2.8 0" scale="1.1 1.1 1.1"></a-text>
-        </a-entity>
-
-        <a-entity id="group9" visible="false">
-          <a-ring color="#ff4b2b" radius-inner="0.35" radius-outer="0.45"
-                  position="-2.0 1.05 0" rotation="-90 0 0"></a-ring>
-          <a-text value="OTHER HAND ON TOP" align="center" position="-2.0 2.8 0" scale="1.0 1.0 1.0"></a-text>
-        </a-entity>
-
-        <a-entity id="group10" visible="false">
-          <a-image id="hand-image" src="#cpr-hands" position="-2.0 1.5 0" width="1.8" height="1.8"
-                   rotation="-90 0 0"></a-image>
-          <a-ring color="#ff4b2b" radius-inner="0.35" radius-outer="0.45"
-                  position="-2.0 1.05 0" rotation="-90 0 0"></a-ring>
-          <a-text value="30 COMPRESSIONS" align="center" position="-2.0 3.0 0"
-                  scale="1.6 1.6 1.6" color="#ff4b2b"></a-text>
-        </a-entity>
-
-        <a-entity id="group11" visible="false">
-          <a-torus color="#00f2fe" radius="0.2" radius-tubular="0.02"
-                   position="-2.0 1.5 -1" rotation="90 0 0"></a-torus>
-          <a-text value="TILT HEAD" align="center" position="-2.0 2.2 -1" scale="1.2 1.2 1.2"></a-text>
-        </a-entity>
-
-        <a-entity id="group12" visible="false">
-          <a-sphere color="#00f2fe" radius="0.25" position="-2.0 1.6 -1"></a-sphere>
-          <a-text value="CLOSE NOSE" align="center" position="-2.0 2.2 -1" scale="1.2 1.2 1.2"></a-text>
-        </a-entity>
-
-        <a-entity id="group13" visible="false">
-          <a-sphere color="#00f2fe" radius="0.3" position="-2.0 1.6 -1" opacity="0.5"></a-sphere>
-          <a-text value="2 BREATHS" align="center" position="-2.0 2.4 -1" scale="1.3 1.3 1.3"></a-text>
-        </a-entity>
-      </a-marker>
-      <a-entity camera></a-entity>
-    </a-scene>
-
-    <script>
       let currentStep = 1;
       let count = 0;
       let timer = null;
-      let audioCtx = null;
-
       const stepsText = [
-        "Make sure the area is safe before approaching the person.",
-        "Call out loudly and ask the person whether they are okay.",
-        "Check responsiveness by gently tapping the person's shoulder.",
-        "Place one hand on the forehead to prepare to open the airway.",
-        "Lift the chin gently to open the airway.",
-        "Look for chest movement.",
-        "Check for normal breathing for up to 10 seconds.",
-        "Place the heel of one hand on the centre of the chest.",
-        "Place the other hand on top and position yourself for compressions.",
-        "Perform 30 chest compressions at 100–120 per minute, compressing the chest 5–6 cm and allowing full recoil after each compression.",
-        "Tilt the head back to prepare for rescue breaths.",
-        "Close the nose.",
-        "Give 2 rescue breaths, about 1 second each, watching for the chest to rise."
+        'Make sure the area is safe before approaching the person.',
+        "Call out loudly and ask, 'Are you okay?'",
+        "Gently tap the person's shoulders to check for a response. If there is no response, activate emergency help by calling 112 and arrange for an AED if available.",
+        "Place one hand on the person's forehead to begin opening the airway.",
+        'Lift the chin gently using a head-tilt, chin-lift manoeuvre.',
+        'Look at the chest for movement.',
+        'Check for normal breathing for no more than 10 seconds.',
+        'Place the heel of one hand on the centre of the chest.',
+        'Place the other hand on top and position yourself over the chest.',
+        'Perform 30 chest compressions at a rate of 100–120 per minute. Compress the chest about 5–6 cm, allow full recoil after each compression, and minimize interruptions.',
+        'Tilt the head back again to open the airway before giving rescue breaths.',
+        'Pinch the nose closed.',
+        'Give 2 rescue breaths, about 1 second each, watching for the chest to rise.'
       ];
 
-      function beep(freq, duration) {
-        if (!audioCtx) return;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        osc.start(); osc.stop(audioCtx.currentTime + duration);
-      }
-
       function initExperience() {
-        try {
-          if (!audioCtx) {
-            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-            if (AudioContextClass) audioCtx = new AudioContextClass();
-          }
-
-          if (audioCtx && audioCtx.state === 'suspended') {
-            audioCtx.resume().catch(() => {});
-          }
-
-          document.getElementById('landing-page').style.opacity = '0';
-          setTimeout(() => {
-            document.getElementById('landing-page').style.display = 'none';
-            document.getElementById('ar-ui').style.display = 'block';
-            document.getElementById('sos-btn').style.display = 'block';
-          }, 500);
-        } catch (error) {
-          console.error('Could not start session:', error);
-          document.getElementById('landing-page').style.display = 'none';
-          document.getElementById('ar-ui').style.display = 'block';
-          document.getElementById('sos-btn').style.display = 'block';
-        }
-      }
-
-      function updateCompressionControls() {
-        const nextBtn = document.getElementById('next-btn-text');
-        const startBtn = document.getElementById('start-cpr-btn');
-        const tapBtn = document.getElementById('compression-tap-btn');
-
-        tapBtn.style.display = 'none';
-
-        if (currentStep === 10) {
-          nextBtn.hidden = true;
-          startBtn.hidden = false;
-          startBtn.disabled = false;
-        } else {
-          startBtn.hidden = true;
-          nextBtn.hidden = false;
-          nextBtn.disabled = false;
-        }
+        document.getElementById('landing-page').style.opacity = '0';
+        setTimeout(() => {
+         document.getElementById('landing-page').style.display = 'none';
+         document.getElementById('ar-ui').style.display = 'block';
+         document.getElementById('sos-btn').style.display = 'block';
+        }, 800);
       }
 
       function nextStep() {
         clearInterval(timer);
-        timer = null;
-
         document.getElementById('cpr-counter').style.display = 'none';
-        document.getElementById('compression-tap-btn').style.display = 'none';
+        document.getElementById('next-btn-text').style.display = 'block';
+        document.getElementById('start-cpr-btn').style.display = 'none';
 
         if (currentStep < 13) {
-          const oldGroup = document.getElementById('group' + currentStep);
-          if (oldGroup) oldGroup.setAttribute('visible', 'false');
-
-          currentStep++;
-
-          const newGroup = document.getElementById('group' + currentStep);
-          if (newGroup) newGroup.setAttribute('visible', 'true');
+         document.getElementById('group' + currentStep).setAttribute('visible', 'false');
+         currentStep++;
+         document.getElementById('group' + currentStep).setAttribute('visible', 'true');
 
           document.getElementById('step-num').innerText = `STEP ${currentStep} OF 13`;
-          document.getElementById('text-info').innerText = stepsText[currentStep - 1];
-          document.getElementById('progress-bar').style.width = ((currentStep / 13) * 100) + '%';
+         document.getElementById('instruction-text').innerText = stepsText[currentStep - 1];
 
-          document.getElementById('next-btn-text').innerText =
-            currentStep === 13 ? "FINISH ✓" : "CONTINUE →";
+         document.getElementById('progress-bar').style.width = (currentStep * 7.69) + '%';
 
-          updateCompressionControls();
+          if (currentStep === 13) document.getElementById('next-btn-text').innerText = "FINISH ✓";
+
+          if (currentStep === 10) {
+            document.getElementById('next-btn-text').style.display = 'none';
+            document.getElementById('start-cpr-btn').style.display = 'block';
+          }
         } else {
-          showFinishPage();
+         showFinishPage();
         }
       }
 
       function startCPR() {
         count = 0;
+        const handImg = document.getElementById('hand-image');
+        document.getElementById('cpr-counter').style.display = 'block';
+        document.getElementById('cpr-counter').innerText = count;
+        document.getElementById('start-cpr-btn').style.display = 'none';
 
-        const counter = document.getElementById('cpr-counter');
-        const startBtn = document.getElementById('start-cpr-btn');
-        const nextBtn = document.getElementById('next-btn-text');
-        const tapBtn = document.getElementById('compression-tap-btn');
+        handImg.setAttribute('animation', 'enabled: true');
 
-        counter.style.display = 'block';
-        counter.innerText = '0 / 30';
-
-        startBtn.hidden = true;
-        nextBtn.hidden = true;
-        tapBtn.style.display = 'block';
+        timer = setInterval(() => {
+          count++;
+          if (count <= 30) {
+            document.getElementById('cpr-counter').innerText = count;
+          } else {
+            document.getElementById('cpr-counter').innerText = "DONE!";
+            handImg.setAttribute('animation', 'enabled: false');
+            clearInterval(timer);
+            document.getElementById('next-btn-text').style.display = 'block';
+          }
+        }, 545);
       }
-
-      function registerCompression() {
-        if (count >= 30) return;
-
-        count++;
-        document.getElementById('cpr-counter').innerText = `${count} / 30`;
-
-        if (count >= 30) {
-          document.getElementById('compression-tap-btn').style.display = 'none';
-          document.getElementById('cpr-counter').innerText = 'DONE! 30 / 30';
-
-          const nextBtn = document.getElementById('next-btn-text');
-          nextBtn.hidden = false;
-          nextBtn.disabled = false;
-          nextBtn.innerText = 'CONTINUE →';
-        }
-      }
-
-      window.addEventListener('error', function(event) {
-        console.error('Page error:', event.message);
-      });
 
       function showFinishPage() {
         document.getElementById('ar-ui').style.display = 'none';
@@ -406,6 +348,6 @@
         fp.style.display = 'flex';
         setTimeout(() => { fp.style.opacity = '1'; }, 100);
       }
-    </script>
+   </script>
   </body>
 </html>
